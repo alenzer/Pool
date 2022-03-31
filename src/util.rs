@@ -24,47 +24,53 @@ pub fn get_multiplier(history: Vec<AprInfo>, _from: Uint128, to: Uint128)
 
     let mut k = 0;
     for i in 1 .. history.len() {
-        let time = Uint128::from(history[i].time as u128);
-        k = i-1;
-        if time > to {
+        let h0 = Uint128::from(history[i].time as u128);
+        k = i;
+        if h0 > to {
             break;
         }
-        if time > from {
-            sum += (from - time) * history[i-1].apr;
-            from = time;
+        if h0 > from {
+            sum += (h0 - from) * (history[i-1].apr - Uint128::from(1000u128));
+            from = h0;
         }
     }
-    sum += (to - from) * history[k].apr;
+    sum += (to - from) * (history[k].apr  - Uint128::from(1000u128)) ;
 
     Ok(sum)
+}
+pub fn get_rewards(apr_history: Vec<AprInfo>, user_info: UserInfo, current_time: Uint128)
+    -> StdResult<Uint128>
+{
+    let from = user_info.last_reward_time;
+    let multiplier = get_multiplier( apr_history, from, current_time.clone())?;
+    let month = Uint128::from((60*60*24*30) as u128);
+
+    let rewards = user_info.amount * multiplier / month / Uint128::from(1000u128);
+    Ok(rewards)
 }
 pub fn ust_update_userinfo(storage: &mut dyn Storage, env: Env, wallet: Addr)
     ->StdResult<bool>
 {
     let mut user_info = UST_USER_INFOS.load(storage, wallet.clone())?;
+    let apr_hstory = UST_APR_HISTORY.load(storage)?;
     let current_time = Uint128::from(env.block.time.seconds() as u128);
 
-    let _user_info = user_info.clone();
-    let mut from = user_info.last_reward_time;
+    let rewards = get_rewards(apr_hstory, user_info.clone(), current_time)?;
 
-    let multiplier = get_multiplier( UST_APR_HISTORY.load(storage)?, from, current_time.clone())?;
-    let month = Uint128::from((60*60*24*30) as u128);
-
-    let rewards = user_info.amount * multiplier / month;
     user_info.reward_amount += rewards;
     user_info.last_reward_time = current_time.clone();
 
-    UST_USER_INFOS.save(storage, wallet, &_user_info)?;
+    UST_USER_INFOS.save(storage, wallet, &user_info)?;
     Ok(true)
 }
 
-pub fn compare_remove(_A: Vec<PayRequest>, _B: Vec<PayRequest>)
+pub fn compare_remove(_a: Vec<PayRequest>, _b: Vec<PayRequest>)
     -> StdResult<Vec<PayRequest>>
 {
-    let mut A = _A;
-    let mut B = _B;
-    B.sort_by(|a, b| a.time.cmp(&b.time));
+    let mut A = _a;
+    let mut B = _b;
 
+    B.sort_by(|a, b| a.time.cmp(&b.time));
     let mut retain = vec![true; A.len()];
 
     let mut j = 0;
@@ -74,7 +80,7 @@ pub fn compare_remove(_A: Vec<PayRequest>, _B: Vec<PayRequest>)
         }
         while A[i].time >= B[j].time {
             if B[j] == A[i] {
-                retain[i] = true;
+                retain[i] = false;
             }
             j += 1;
             if j >= B.len() {
@@ -82,6 +88,7 @@ pub fn compare_remove(_A: Vec<PayRequest>, _B: Vec<PayRequest>)
             }
         }
     }
+
     let mut iter = retain.iter();
     A.retain(|_| *iter.next().unwrap());
 

@@ -12,7 +12,7 @@ use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, UserInfo, AprInfo, PayRequest};
 use crate::state::{OWNER, TREASURY, UST_APR_HISTORY, UST_USER_INFOS, 
     LUNA_APR_HISTORY, LUNA_USER_INFOS, UST_REWARDS_REQUEST, UST_WITHDRAW_REQUEST};
-use crate::util::{check_onlyowner, update_userinfo, compare_remove};
+use crate::util::{check_onlyowner, ust_update_userinfo, compare_remove};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "Pool";
@@ -36,21 +36,23 @@ pub fn instantiate(
     let treasury = deps.api.addr_validate(msg.treasury.as_str())?;
     TREASURY.save(deps.storage, &treasury)?;
 
-    let mut ust_apr_history = UST_APR_HISTORY.load(deps.storage)?;
+    let mut ust_apr_history: Vec<AprInfo> = Vec::new();
     ust_apr_history.push(
         AprInfo{
             apr: msg.ust_apr,
             time: env.block.time.seconds()
         }
     );
+    UST_APR_HISTORY.save(deps.storage, &ust_apr_history)?;
 
-    let mut luna_apr_history = LUNA_APR_HISTORY.load(deps.storage)?;
+    let mut luna_apr_history: Vec<AprInfo> = Vec::new(); 
     luna_apr_history.push(
         AprInfo{
             apr: msg.luna_apr,
             time: env.block.time.seconds()
         }
     );
+    LUNA_APR_HISTORY.save(deps.storage, &luna_apr_history)?;
 
     UST_REWARDS_REQUEST.save(deps.storage, &Vec::new())?;
     UST_WITHDRAW_REQUEST.save(deps.storage, &Vec::new())?;
@@ -69,8 +71,8 @@ pub fn execute(
         ExecuteMsg::SetConfig{ owner, treasury }
             => try_setconfig(deps, info, owner, treasury),
 
-        ExecuteMsg::SetUSTAPR{ apr }
-            => try_set_ust_apr(deps, env, info, apr),
+        ExecuteMsg::SetAPRUST{ apr }
+            => try_set_apr_ust(deps, env, info, apr),
 
         ExecuteMsg::DepositUST {  }
             => try_deposit_ust(deps, env, info),
@@ -79,13 +81,13 @@ pub fn execute(
             => try_request_withdraw_ust(deps, env, info, amount),
 
         ExecuteMsg::WithdrawUST { request }
-            => try_withdraw_ust(deps, env, info, request),
+            => try_withdraw_ust(deps, info, request),
 
         ExecuteMsg::RequestClaimRewardsUST{ }
             => try_request_claimrewards_ust(deps, env, info),
 
         ExecuteMsg::ClaimRewardsUST { request }
-            => try_claimrewards_ust(deps, env, info, request)
+            => try_claimrewards_ust(deps, info, request)
     }
 }
 
@@ -116,7 +118,7 @@ pub fn try_setconfig(
     Ok(Response::new()
         .add_attribute("action", "SetConfig"))                                
 }
-pub fn try_set_ust_apr(
+pub fn try_set_apr_ust(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
@@ -124,6 +126,7 @@ pub fn try_set_ust_apr(
 )
     ->Result<Response, ContractError>
 {
+    check_onlyowner(deps.storage, info.sender)?;
     let mut apr_history = UST_APR_HISTORY.load(deps.storage)?;
     let apr_info = AprInfo{
         apr,
@@ -131,7 +134,7 @@ pub fn try_set_ust_apr(
     };
 
     apr_history.push(apr_info);
-
+    UST_APR_HISTORY.save(deps.storage, &apr_history)?;
     Ok(Response::new())
 }
 pub fn try_deposit_ust(
@@ -154,7 +157,7 @@ pub fn try_deposit_ust(
     let res = UST_USER_INFOS.may_load(deps.storage, wallet.clone())?;
     let user_info = match res{
         Some(mut info) => {
-            update_userinfo(deps.storage, env.clone(), wallet.clone())?;
+            ust_update_userinfo(deps.storage, env.clone(), wallet.clone())?;
 
             info.amount += fund.amount;
             info
@@ -190,11 +193,13 @@ pub fn try_request_withdraw_ust(
     -> Result<Response, ContractError>
 {
     let wallet = info.sender;
+    ust_update_userinfo(deps.storage, env.clone(), wallet.clone())?;
+
     let mut user_info = UST_USER_INFOS.load(deps.storage, wallet.clone())?;
     if user_info.amount < amount {
         return Err(ContractError::NotEnoughBalance { balance: amount });
     }
-
+    
     user_info.amount -= amount;
     UST_USER_INFOS.save(deps.storage, wallet.clone(), &user_info)?;
 
@@ -204,6 +209,8 @@ pub fn try_request_withdraw_ust(
         amount,
         time: Uint128::from(env.block.time.seconds() as u128)
     });
+    UST_WITHDRAW_REQUEST.save(deps.storage, &request)?;
+
     Ok(Response::new()
         .add_attribute("action", "withdraw")
     )
@@ -211,7 +218,6 @@ pub fn try_request_withdraw_ust(
 
 pub fn try_withdraw_ust(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     request: Vec<PayRequest>
 )
@@ -238,7 +244,7 @@ pub fn try_request_claimrewards_ust(
     -> Result<Response, ContractError>
 {
     let wallet = info.sender;
-    update_userinfo(deps.storage, env.clone(), wallet.clone())?;
+    ust_update_userinfo(deps.storage, env.clone(), wallet.clone())?;
 
     let mut user_info = UST_USER_INFOS.load(deps.storage, wallet.clone())?;
  
@@ -248,6 +254,7 @@ pub fn try_request_claimrewards_ust(
         amount: user_info.reward_amount,
         time: Uint128::from(env.block.time.seconds() as u128)
     });
+    UST_REWARDS_REQUEST.save(deps.storage, &request)?;
 
     user_info.reward_amount = Uint128::zero();
     UST_USER_INFOS.save(deps.storage, wallet, &user_info)?;
@@ -257,7 +264,6 @@ pub fn try_request_claimrewards_ust(
 
 pub fn try_claimrewards_ust(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     request: Vec<PayRequest>,
 )

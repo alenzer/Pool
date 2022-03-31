@@ -18,7 +18,7 @@ pub enum ExecuteMsg {
         treasury: Option<Addr>,
     },
 
-    SetUSTAPR{
+    SetAPRUST{
         apr: Uint128
     },
 
@@ -45,9 +45,12 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     GetOwner{ },
-    GetHistoryOfAPR{ },
+    GetTreasury{ },
+    GetHistoryOfAPRUST{ },
     GetUserInfoUST{ wallet: Addr },
     GetPendingRewardsUST{ wallet: Addr },
+    GetWithdrawRequstUST{ },
+    GetClaimRewardsRequestUST{ }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

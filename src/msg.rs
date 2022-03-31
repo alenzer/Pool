@@ -1,12 +1,13 @@
 use cosmwasm_std::{Uint128, Addr};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use cw_storage_plus::{Map, U128Key};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub owner: Option<String>,
-    pub treasury: String
+    pub treasury: String,
+    pub ust_apr: Uint128,
+    pub luna_apr: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -16,16 +17,27 @@ pub enum ExecuteMsg {
         owner: Option<Addr>,
         treasury: Option<Addr>,
     },
+
     SetUSTAPR{
         apr: Uint128
     },
+
     DepositUST {
     },
-    WithdrawUST {
-        amount: Uint128,
+
+    RequestWithdrawUST{
+        amount: Uint128
     },
+
+    WithdrawUST {
+        request: Vec<PayRequest>,
+    },
+
+    RequestClaimRewardsUST {
+    },
+
     ClaimRewardsUST{
-        wallet: Addr,
+        request: Vec<PayRequest>
     }
 }
 
@@ -50,4 +62,11 @@ pub struct UserInfo{
 	pub amount: Uint128,
 	pub reward_amount: Uint128,
     pub last_reward_time: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct PayRequest{
+	pub wallet: Addr,
+	pub amount: Uint128,
+    pub time: Uint128,
 }

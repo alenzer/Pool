@@ -18,25 +18,47 @@ pub enum ExecuteMsg {
         treasury: Option<Addr>,
     },
 
-    SetAPRUST{
+    SetAprUst{
         apr: Uint128
     },
 
-    DepositUST {
+    DepositUst {
     },
 
-    RequestWithdrawUST{
+    RequestWithdrawUst{
         amount: Uint128
     },
 
-    WithdrawUST {
+    WithdrawUst {
         request: Vec<PayRequest>,
     },
 
-    RequestClaimRewardsUST {
+    RequestClaimRewardsUst {
     },
 
-    ClaimRewardsUST{
+    ClaimRewardsUst{
+        request: Vec<PayRequest>
+    },
+//------------------------------------------
+    SetAprLuna{
+        apr: Uint128
+    },
+
+    DepositLuna {
+    },
+
+    RequestWithdrawLuna{
+        amount: Uint128
+    },
+
+    WithdrawLuna {
+        request: Vec<PayRequest>,
+    },
+
+    RequestClaimRewardsLuna {
+    },
+
+    ClaimRewardsLuna{
         request: Vec<PayRequest>
     }
 }
@@ -46,11 +68,18 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     GetOwner{ },
     GetTreasury{ },
-    GetHistoryOfAPRUST{ },
-    GetUserInfoUST{ wallet: Addr },
-    GetPendingRewardsUST{ wallet: Addr },
-    GetWithdrawRequstUST{ },
-    GetClaimRewardsRequestUST{ }
+
+    GetHistoryOfAprUst{ },
+    GetUserInfoUst{ wallet: Addr },
+    GetPendingRewardsUst{ wallet: Addr },
+    GetWithdrawRequstUst{ },
+    GetClaimRewardsRequestUst{ },
+//-------------------------------
+    GetHistoryOfAprLuna{ },
+    GetUserInfoLuna{ wallet: Addr },
+    GetPendingRewardsLuna{ wallet: Addr },
+    GetWithdrawRequstLuna{ },
+    GetClaimRewardsRequestLuna{ },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -2,17 +2,20 @@
 use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{
-    Addr, to_binary, DepsMut, Env, MessageInfo, Response,
-    Uint128, CosmosMsg, BankMsg, Storage, Coin
+    Addr, DepsMut, Env, MessageInfo, Response,
+    Uint128, BankMsg
 };
 use cw2::set_contract_version;
-use cw20::{Cw20ExecuteMsg};
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, UserInfo, AprInfo, PayRequest};
 use crate::state::{OWNER, TREASURY, UST_APR_HISTORY, UST_USER_INFOS, 
-    LUNA_APR_HISTORY, LUNA_USER_INFOS, UST_REWARDS_REQUEST, UST_WITHDRAW_REQUEST};
+    LUNA_APR_HISTORY, UST_REWARDS_REQUEST, UST_WITHDRAW_REQUEST, LUNA_REWARDS_REQUEST,
+    LUNA_WITHDRAW_REQUEST
+};
 use crate::util::{check_onlyowner, ust_update_userinfo, compare_remove};
+use crate::contract_luna::{try_claimrewards_luna, try_deposit_luna, try_request_claimrewards_luna,
+    try_request_withdraw_luna, try_set_apr_luna, try_withdraw_luna};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "Pool";
@@ -56,6 +59,10 @@ pub fn instantiate(
 
     UST_REWARDS_REQUEST.save(deps.storage, &Vec::new())?;
     UST_WITHDRAW_REQUEST.save(deps.storage, &Vec::new())?;
+
+    LUNA_REWARDS_REQUEST.save(deps.storage, &Vec::new())?;
+    LUNA_WITHDRAW_REQUEST.save(deps.storage, &Vec::new())?;
+
     Ok(Response::new()
         .add_attribute("action", "instantiate"))
 }
@@ -71,23 +78,41 @@ pub fn execute(
         ExecuteMsg::SetConfig{ owner, treasury }
             => try_setconfig(deps, info, owner, treasury),
 
-        ExecuteMsg::SetAPRUST{ apr }
+        ExecuteMsg::SetAprUst{ apr }
             => try_set_apr_ust(deps, env, info, apr),
 
-        ExecuteMsg::DepositUST {  }
+        ExecuteMsg::DepositUst {  }
             => try_deposit_ust(deps, env, info),
         
-        ExecuteMsg::RequestWithdrawUST{ amount }
+        ExecuteMsg::RequestWithdrawUst{ amount }
             => try_request_withdraw_ust(deps, env, info, amount),
 
-        ExecuteMsg::WithdrawUST { request }
+        ExecuteMsg::WithdrawUst { request }
             => try_withdraw_ust(deps, info, request),
 
-        ExecuteMsg::RequestClaimRewardsUST{ }
+        ExecuteMsg::RequestClaimRewardsUst{ }
             => try_request_claimrewards_ust(deps, env, info),
 
-        ExecuteMsg::ClaimRewardsUST { request }
-            => try_claimrewards_ust(deps, info, request)
+        ExecuteMsg::ClaimRewardsUst { request }
+            => try_claimrewards_ust(deps, info, request),
+//---------------------------------------------------------------
+        ExecuteMsg::SetAprLuna{ apr }
+        => try_set_apr_luna(deps, env, info, apr),
+
+        ExecuteMsg::DepositLuna {  }
+        => try_deposit_luna(deps, env, info),
+
+        ExecuteMsg::RequestWithdrawLuna{ amount }
+        => try_request_withdraw_luna(deps, env, info, amount),
+
+        ExecuteMsg::WithdrawLuna { request }
+        => try_withdraw_luna(deps, info, request),
+
+        ExecuteMsg::RequestClaimRewardsLuna{ }
+        => try_request_claimrewards_luna(deps, env, info),
+
+        ExecuteMsg::ClaimRewardsLuna { request }
+        => try_claimrewards_luna(deps, info, request),
     }
 }
 

@@ -12,7 +12,7 @@ use crate::mock_querier::{mock_dependencies};
 // use terraswap::pair::ExecuteMsg as TerraswapExecuteMsg;
 
 #[test]
-fn workflow_luna(){
+fn workflow_ust(){
     let mut deps = mock_dependencies(&[]);
     let mut env = mock_env();
     let mut info = mock_info("owner", &[]);
@@ -36,10 +36,10 @@ fn workflow_luna(){
 
 //deposit
     info.sender = Addr::unchecked("user1".to_string());
-    info.funds = vec![Coin{denom: "uluna".to_string(), amount: Uint128::from(10u128)}];
+    info.funds = vec![Coin{denom: "uusd".to_string(), amount: Uint128::from(10u128)}];
     seconds += MONTH;
     env.block.time = Timestamp::from_seconds(seconds.clone());
-    let msg = ExecuteMsg::DepositLuna {  };
+    let msg = ExecuteMsg::DepositUst {  };
 
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("deposit{:?}\n", res);
@@ -48,7 +48,7 @@ fn workflow_luna(){
     info.sender = Addr::unchecked("owner".to_string());
     seconds += MONTH;
     env.block.time = Timestamp::from_seconds(seconds.clone());
-    let msg = ExecuteMsg::SetAprLuna {apr: Uint128::from(4000u128) };
+    let msg = ExecuteMsg::SetAprUst {apr: Uint128::from(4000u128) };
 
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("set apr{:?}\n", res);
@@ -57,7 +57,7 @@ fn workflow_luna(){
     env.block.time = Timestamp::from_seconds(seconds.clone());
 
 //get apr
-    let msg = QueryMsg::GetHistoryOfAprLuna{};
+    let msg = QueryMsg::GetHistoryOfAprUst{};
     let res = query(deps.as_ref(), env.clone(), msg).unwrap();
     let apr_infos: Vec<AprInfo> = from_binary(&res).unwrap();
     println!("ust apr info: {:?}\n", apr_infos);
@@ -69,19 +69,19 @@ fn workflow_luna(){
     println!("block seconds {:?}", env.block.time.seconds());
 
 //getrewards
-    let msg = QueryMsg::GetPendingRewardsLuna{wallet: Addr::unchecked("user1".to_string())};
+    let msg = QueryMsg::GetPendingRewardsUst{wallet: Addr::unchecked("user1".to_string())};
     let res = query(deps.as_ref(), env.clone(), msg).unwrap();
     let res: Uint128 = from_binary(&res).unwrap();
     println!("pending rewards {:?}\n", res );
 
 //request ClaimRewards
     info.sender = Addr::unchecked("user1".to_string());
-    let msg = ExecuteMsg::RequestClaimRewardsLuna { };
+    let msg = ExecuteMsg::RequestClaimRewardsUst { };
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("request claim rewards{:?}\n", res);
 
 //get claimrequest
-    let msg = QueryMsg::GetClaimRewardsRequestLuna { };
+    let msg = QueryMsg::GetClaimRewardsRequestUst { };
     let res = query(deps.as_ref(), env.clone(), msg).unwrap();
     let res: Vec<PayRequest> = from_binary(&res).unwrap();
     println!("claim Request {:?}\n", res );
@@ -89,7 +89,7 @@ fn workflow_luna(){
 //withdraw 5 
     info.sender = Addr::unchecked("user1".to_string());
     info.funds = vec![];
-    let msg = ExecuteMsg::RequestWithdrawLuna { amount: Uint128::from(5u128)  };
+    let msg = ExecuteMsg::RequestWithdrawUst { amount: Uint128::from(5u128)  };
 
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("request withdraw5 {:?}\n", res);
@@ -97,13 +97,13 @@ fn workflow_luna(){
 //withdraw 4 
     seconds += MONTH;
     env.block.time = Timestamp::from_seconds(seconds.clone());
-    let msg = ExecuteMsg::RequestWithdrawLuna { amount: Uint128::from(1u128)  };
+    let msg = ExecuteMsg::RequestWithdrawUst { amount: Uint128::from(1u128)  };
 
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("request withdraw4 {:?}\n", res);
 
 //getrewards
-    let msg = QueryMsg::GetPendingRewardsLuna{wallet: Addr::unchecked("user1".to_string())};
+    let msg = QueryMsg::GetPendingRewardsUst{wallet: Addr::unchecked("user1".to_string())};
     let res = query(deps.as_ref(), env.clone(), msg).unwrap();
     let res: Uint128 = from_binary(&res).unwrap();
     println!("pending rewards {:?}\n", res );
@@ -111,7 +111,7 @@ fn workflow_luna(){
 //withdraw 3 
     seconds += MONTH;
     env.block.time = Timestamp::from_seconds(seconds.clone());
-    let msg = ExecuteMsg::RequestWithdrawLuna { amount: Uint128::from(1u128)  };
+    let msg = ExecuteMsg::RequestWithdrawUst { amount: Uint128::from(1u128)  };
 
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("request withdraw3 {:?}\n", res);
@@ -119,7 +119,7 @@ fn workflow_luna(){
 //withdraw 2
     seconds += MONTH;
     env.block.time = Timestamp::from_seconds(seconds.clone());
-    let msg = ExecuteMsg::RequestWithdrawLuna { amount: Uint128::from(1u128)  };
+    let msg = ExecuteMsg::RequestWithdrawUst { amount: Uint128::from(1u128)  };
 
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("request withdraw2 {:?}\n", res);
@@ -127,7 +127,7 @@ fn workflow_luna(){
 //withdraw 1 
     seconds += MONTH;
     env.block.time = Timestamp::from_seconds(seconds.clone());
-    let msg = ExecuteMsg::RequestWithdrawLuna { amount: Uint128::from(1u128)  };
+    let msg = ExecuteMsg::RequestWithdrawUst { amount: Uint128::from(1u128)  };
 
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("request withdraw1 {:?}\n", res);
@@ -135,7 +135,7 @@ fn workflow_luna(){
 //withdraw 0 
     seconds += MONTH;
     env.block.time = Timestamp::from_seconds(seconds.clone());
-    let msg = ExecuteMsg::RequestWithdrawLuna { amount: Uint128::from(1u128)  };
+    let msg = ExecuteMsg::RequestWithdrawUst { amount: Uint128::from(1u128)  };
 
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("request withdraw0 {:?}\n", res);
@@ -148,24 +148,24 @@ fn workflow_luna(){
         PayRequest{wallet: Addr::unchecked("user1".to_string()), amount: Uint128::from(1u128), time: Uint128::from(18144000u128)}
     ];
 
-    let msg = ExecuteMsg::WithdrawLuna {request};
+    let msg = ExecuteMsg::WithdrawUst {request};
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("withdraw{:?}\n", res);
 
 //get withdrawrequest
-    let msg = QueryMsg::GetWithdrawRequstLuna{ };
+    let msg = QueryMsg::GetWithdrawRequstUst{ };
     let res = query(deps.as_ref(), env.clone(), msg).unwrap();
     let res: Vec<PayRequest> = from_binary(&res).unwrap();
     println!("withdraw Request {:?}\n", res );
 
 //request ClaimRewards
     info.sender = Addr::unchecked("user1".to_string());
-    let msg = ExecuteMsg::RequestClaimRewardsLuna { };
+    let msg = ExecuteMsg::RequestClaimRewardsUst { };
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("request claim rewards{:?}\n", res);
 
 //get claimrequest
-    let msg = QueryMsg::GetClaimRewardsRequestLuna { };
+    let msg = QueryMsg::GetClaimRewardsRequestUst { };
     let res = query(deps.as_ref(), env.clone(), msg).unwrap();
     let res: Vec<PayRequest> = from_binary(&res).unwrap();
     println!("claim Request {:?}\n", res );    
@@ -178,12 +178,12 @@ fn workflow_luna(){
     ];
 
     info.sender = Addr::unchecked("treasury".to_string());
-    let msg = ExecuteMsg::ClaimRewardsLuna {request };
+    let msg = ExecuteMsg::ClaimRewardsUst {request };
     let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
     println!("claim rewards{:?}\n", res);
 
 //get claimrequest
-    let msg = QueryMsg::GetClaimRewardsRequestLuna { };
+    let msg = QueryMsg::GetClaimRewardsRequestUst { };
     let res = query(deps.as_ref(), env.clone(), msg).unwrap();
     let res: Vec<PayRequest> = from_binary(&res).unwrap();
     println!("claim Request {:?}\n", res );    
@@ -191,7 +191,7 @@ fn workflow_luna(){
 //get user info
     seconds += MONTH;
     env.block.time = Timestamp::from_seconds(seconds.clone());
-    let msg = QueryMsg::GetUserInfoLuna{wallet: Addr::unchecked("user1".to_string())};
+    let msg = QueryMsg::GetUserInfoUst{wallet: Addr::unchecked("user1".to_string())};
     let res = query(deps.as_ref(), env.clone(), msg).unwrap();
     let res: UserInfo = from_binary(&res).unwrap();
     println!("User info {:?}\n", res );

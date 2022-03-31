@@ -1,4 +1,6 @@
 pub mod contract;
+pub mod contract_luna;
+
 pub mod query;
 mod error;
 pub mod msg;

@@ -102,3 +102,10 @@ pub struct PayRequest{
 	pub amount: Uint128,
     pub time: Uint128,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct AmountInfo{
+	pub ust_amount: Uint128,
+    pub luna_amount: Uint128,
+    pub time: u64,
+}

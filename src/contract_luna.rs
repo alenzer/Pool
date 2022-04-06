@@ -8,7 +8,7 @@ use cosmwasm_std::{
 use crate::error::ContractError;
 use crate::msg::{UserInfo, AprInfo, PayRequest};
 use crate::state::{TREASURY, LUNA_APR_HISTORY, LUNA_USER_INFOS, LUNA_REWARDS_REQUEST, LUNA_WITHDRAW_REQUEST};
-use crate::util::{check_onlyowner, luna_update_userinfo, compare_remove};
+use crate::util::{check_onlyowner, luna_update_userinfo, compare_remove, append_amount_history};
 
 pub fn try_set_apr_luna(
     deps: DepsMut,
@@ -64,6 +64,8 @@ pub fn try_deposit_luna(
 
     LUNA_USER_INFOS.save(deps.storage, wallet, &user_info)?;
 
+    append_amount_history(deps.storage, env, Uint128::zero(), fund.amount, true)?;
+
     let send2_treasury = BankMsg::Send { 
         to_address: TREASURY.load(deps.storage)?.to_string(),
         amount: _fund
@@ -102,6 +104,8 @@ pub fn try_request_withdraw_luna(
         time: Uint128::from(env.block.time.seconds() as u128)
     });
     LUNA_WITHDRAW_REQUEST.save(deps.storage, &request)?;
+
+    append_amount_history(deps.storage, env, Uint128::zero(), amount, false)?;
 
     Ok(Response::new()
         .add_attribute("action", "withdraw")

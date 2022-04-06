@@ -11,9 +11,9 @@ use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, UserInfo, AprInfo, PayRequest};
 use crate::state::{OWNER, TREASURY, UST_APR_HISTORY, UST_USER_INFOS, 
     LUNA_APR_HISTORY, UST_REWARDS_REQUEST, UST_WITHDRAW_REQUEST, LUNA_REWARDS_REQUEST,
-    LUNA_WITHDRAW_REQUEST
+    LUNA_WITHDRAW_REQUEST, AMOUNT_HISTORY
 };
-use crate::util::{check_onlyowner, ust_update_userinfo, compare_remove};
+use crate::util::{check_onlyowner, ust_update_userinfo, compare_remove, append_amount_history};
 use crate::contract_luna::{try_claimrewards_luna, try_deposit_luna, try_request_claimrewards_luna,
     try_request_withdraw_luna, try_set_apr_luna, try_withdraw_luna};
 
@@ -62,6 +62,8 @@ pub fn instantiate(
 
     LUNA_REWARDS_REQUEST.save(deps.storage, &Vec::new())?;
     LUNA_WITHDRAW_REQUEST.save(deps.storage, &Vec::new())?;
+
+    AMOUNT_HISTORY.save(deps.storage, &Vec::new())?;
 
     Ok(Response::new()
         .add_attribute("action", "instantiate"))
@@ -197,6 +199,8 @@ pub fn try_deposit_ust(
 
     UST_USER_INFOS.save(deps.storage, wallet, &user_info)?;
 
+    append_amount_history(deps.storage, env, fund.amount, Uint128::zero(), true)?;
+
     let send2_treasury = BankMsg::Send { 
         to_address: TREASURY.load(deps.storage)?.to_string(),
         amount: _fund
@@ -235,6 +239,8 @@ pub fn try_request_withdraw_ust(
         time: Uint128::from(env.block.time.seconds() as u128)
     });
     UST_WITHDRAW_REQUEST.save(deps.storage, &request)?;
+
+    append_amount_history(deps.storage, env, amount, Uint128::zero(), false)?;
 
     Ok(Response::new()
         .add_attribute("action", "withdraw")

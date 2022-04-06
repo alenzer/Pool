@@ -4,9 +4,9 @@ use cosmwasm_std::{ Storage, Uint128, Addr, StdResult, StdError, Response, Env, 
 use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, BalanceResponse as Cw20BalanceResponse, TokenInfoResponse};
 
 use crate::state::{ OWNER, TREASURY, UST_APR_HISTORY, UST_USER_INFOS, 
-    LUNA_APR_HISTORY, LUNA_USER_INFOS
+    LUNA_APR_HISTORY, LUNA_USER_INFOS, AMOUNT_HISTORY, 
 };
-use crate::msg::{UserInfo, PayRequest, AprInfo};
+use crate::msg::{UserInfo, PayRequest, AprInfo, AmountInfo};
 
 pub fn check_onlyowner(storage: &dyn Storage, sender: Addr) -> Result<Response, ContractError> {
     let owner = OWNER.load(storage)?;
@@ -30,11 +30,11 @@ pub fn get_multiplier(history: Vec<AprInfo>, _from: Uint128, to: Uint128)
             break;
         }
         if h0 > from {
-            sum += (h0 - from) * (history[i-1].apr - Uint128::from(1000u128));
+            sum += (h0 - from) * history[i-1].apr;
             from = h0;
         }
     }
-    sum += (to - from) * (history[k].apr  - Uint128::from(1000u128)) ;
+    sum += (to - from) * history[k].apr;
 
     Ok(sum)
 }
@@ -109,4 +109,40 @@ pub fn compare_remove(_a: Vec<PayRequest>, _b: Vec<PayRequest>)
     A.retain(|_| *iter.next().unwrap());
 
     Ok(A)
+}
+
+pub fn append_amount_history(storage: &mut dyn Storage, env: Env, ust_amount: Uint128, luna_amount: Uint128, bAdd: bool)
+    -> StdResult<bool>
+{
+    let mut amount_history = AMOUNT_HISTORY.load(storage)?;
+    if amount_history.len() == 0 {
+        amount_history.push(AmountInfo{
+            ust_amount,
+            luna_amount,
+            time: env.block.time.seconds()
+        });
+    } else {
+        let last_index = amount_history.len() - 1;
+        let mut info = amount_history[last_index].clone();
+        if bAdd {
+            info.ust_amount += ust_amount;
+            info.luna_amount += luna_amount;
+        } else {
+            info.ust_amount -= ust_amount;
+            info.luna_amount -= luna_amount;
+        }
+        info.time = env.block.time.seconds();
+        amount_history.push(info);
+
+        if last_index > 50 {
+            let mut retain = vec![true; amount_history.len()];
+            retain[0] = false;
+
+            let mut iter = retain.iter();
+            amount_history.retain(|_| *iter.next().unwrap());
+        }
+    }
+
+    AMOUNT_HISTORY.save(storage, &amount_history)?;
+    Ok(true)
 }

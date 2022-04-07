@@ -80,6 +80,9 @@ pub enum QueryMsg {
     GetPendingRewardsLuna{ wallet: Addr },
     GetWithdrawRequstLuna{ },
     GetClaimRewardsRequestLuna{ },
+
+//--------------------------------
+    GetAmountHistory{ },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

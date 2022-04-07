@@ -7,7 +7,7 @@ use cosmwasm_std::{
 use crate::msg::{QueryMsg};
 use crate::state::{ OWNER, TREASURY, UST_APR_HISTORY, UST_USER_INFOS, UST_REWARDS_REQUEST,
     UST_WITHDRAW_REQUEST, LUNA_APR_HISTORY, LUNA_USER_INFOS, LUNA_REWARDS_REQUEST,
-    LUNA_WITHDRAW_REQUEST};
+    LUNA_WITHDRAW_REQUEST, AMOUNT_HISTORY};
 use crate::util::{ get_rewards };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -67,6 +67,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
         QueryMsg::GetClaimRewardsRequestLuna{ } => {
             to_binary(&LUNA_REWARDS_REQUEST.load(deps.storage)?)
+        },
+
+        QueryMsg::GetAmountHistory{ } => {
+            to_binary(&AMOUNT_HISTORY.load(deps.storage)?)
         }
     }
 }
